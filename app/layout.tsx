@@ -19,6 +19,7 @@ export default function RootLayout({
     { href: '/chat', label: 'Chat' },
     { href: '/graph', label: 'Graph' },
     { href: '/temporal', label: 'Temporal' },
+    { href: '/backtest', label: 'Backtest' },
   ]
 
   return (
