@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { exportScenario } from '@/lib/pdf-exporter'
 
 interface ScenarioResult {
   type: 'status' | 'analysis_chunk' | 'complete' | 'error'
@@ -53,6 +54,8 @@ export default function ScenarioPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [currentStatus, setCurrentStatus] = useState('')
   const [analysis, setAnalysis] = useState('')
+  const [currentScenario, setCurrentScenario] = useState('')
+  const [currentCategory, setCurrentCategory] = useState('')
   const analysisRef = useRef<HTMLDivElement>(null)
 
   const handleAnalyze = async (scenario: string) => {
@@ -61,6 +64,8 @@ export default function ScenarioPage() {
     setIsAnalyzing(true)
     setCurrentStatus('Running scenario through wiki frameworks...')
     setAnalysis('')
+    setCurrentScenario(scenario)
+    setCurrentCategory(selectedPredefined?.category || 'general')
 
     try {
       const response = await fetch('/api/scenario', {
@@ -237,7 +242,27 @@ export default function ScenarioPage() {
           <div>
             {analysis ? (
               <div className="bg-gray-800 rounded-lg p-6 border border-gray-700 sticky top-6">
-                <h3 className="text-lg font-semibold mb-3">📊 Scenario Analysis</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold">📊 Scenario Analysis</h3>
+                  <button
+                    onClick={() => {
+                      if (!isAnalyzing && analysis) {
+                        exportScenario({
+                          scenario: currentScenario,
+                          category: currentCategory,
+                          analysis
+                        })
+                      }
+                    }}
+                    disabled={isAnalyzing || !analysis}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export PDF
+                  </button>
+                </div>
                 <div
                   ref={analysisRef}
                   className="prose prose-invert max-w-none overflow-y-auto max-h-[700px] text-sm"

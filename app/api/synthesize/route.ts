@@ -281,7 +281,7 @@ ${contradictionScore ? `**AlphaBot Contradiction Score**: ${contradictionScore.s
 ${contradictions.length > 0 ? contradictions.map(c => `
 **${c.framework}** (${c.author}) - ${c.confidence}% confidence
 ${c.contradiction}
-${c.evidence ? '\nEvidence:\n' + c.evidence.map(e => `  - ${e}`).join('\n') : ''}
+${c.evidence ? '\nEvidence:\n' + c.evidence.map((e: string) => `  - ${e}`).join('\n') : ''}
 ${c.investmentImplication ? '\n💰 Investment Implication: ' + c.investmentImplication : ''}
 `).join('\n') : 'No significant contradictions detected'}
 

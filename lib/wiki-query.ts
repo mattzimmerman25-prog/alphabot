@@ -38,18 +38,20 @@ export async function loadWikiIndex(): Promise<WikiIndex> {
     if (!response.ok) {
       throw new Error('Wiki index not found')
     }
-    cachedIndex = await response.json()
-    return cachedIndex
+    const data = await response.json()
+    cachedIndex = data
+    return data as WikiIndex
   } catch (error) {
     console.error('Failed to load wiki index:', error)
     // Return empty index as fallback
-    return {
+    const fallbackIndex: WikiIndex = {
       pages: [],
       entities: {},
       concepts: {},
       totalPages: 0,
       lastBuilt: new Date().toISOString()
     }
+    return fallbackIndex
   }
 }
 

@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { exportSynthesis } from '@/lib/pdf-exporter'
 
 interface Message {
-  type: 'status' | 'entities' | 'wiki_context' | 'contradictions' | 'synthesis_chunk' | 'complete' | 'error'
+  type: 'status' | 'entities' | 'wiki_context' | 'contradictions' | 'contradiction_score' | 'synthesis_chunk' | 'complete' | 'error'
   message?: string
   data?: any
 }
@@ -11,10 +12,12 @@ interface Message {
 export default function SynthesizePage() {
   const [newsTitle, setNewsTitle] = useState('')
   const [newsContent, setNewsContent] = useState('')
+  const [newsUrl, setNewsUrl] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [currentStatus, setCurrentStatus] = useState('')
   const [entities, setEntities] = useState<string[]>([])
   const [contradictions, setContradictions] = useState<any[]>([])
+  const [contradictionScore, setContradictionScore] = useState<any>(null)
   const [synthesis, setSynthesis] = useState('')
   const synthesisRef = useRef<HTMLDivElement>(null)
 
@@ -63,6 +66,10 @@ export default function SynthesizePage() {
 
               case 'contradictions':
                 setContradictions(data.data || [])
+                break
+
+              case 'contradiction_score':
+                setContradictionScore(data.data || null)
                 break
 
               case 'synthesis_chunk':
@@ -142,6 +149,17 @@ export default function SynthesizePage() {
                     value={newsTitle}
                     onChange={(e) => setNewsTitle(e.target.value)}
                     placeholder="e.g., Microsoft Announces $10B Data Center Expansion"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Source URL (optional)</label>
+                  <input
+                    type="url"
+                    value={newsUrl}
+                    onChange={(e) => setNewsUrl(e.target.value)}
+                    placeholder="https://..."
                     className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -251,7 +269,30 @@ export default function SynthesizePage() {
             {/* Synthesis */}
             {synthesis && (
               <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                <h3 className="text-lg font-semibold mb-3">📊 Investment Thesis</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold">📊 Investment Thesis</h3>
+                  <button
+                    onClick={() => {
+                      if (!isAnalyzing) {
+                        exportSynthesis({
+                          title: newsTitle,
+                          newsUrl: newsUrl || 'User-provided content',
+                          entities,
+                          contradictions,
+                          contradictionScore: contradictionScore || { score: 0, signal: 'NEUTRAL', reasoning: '' },
+                          synthesis
+                        })
+                      }
+                    }}
+                    disabled={isAnalyzing}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Export PDF
+                  </button>
+                </div>
                 <div
                   ref={synthesisRef}
                   className="prose prose-invert max-w-none overflow-y-auto max-h-[600px] text-sm"
