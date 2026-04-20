@@ -18,6 +18,7 @@ export default function RootLayout({
     { href: '/', label: 'Dashboard' },
     { href: '/news', label: 'News' },
     { href: '/synthesize', label: 'Synthesize' },
+    { href: '/batch', label: 'Batch' },
     { href: '/compare', label: 'Compare' },
     { href: '/scenario', label: 'Scenario' },
     { href: '/chat', label: 'Chat' },

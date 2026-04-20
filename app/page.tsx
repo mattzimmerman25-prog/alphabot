@@ -34,6 +34,14 @@ export default function DashboardV2() {
       stats: '5 contradiction categories'
     },
     {
+      title: 'Batch Analysis Mode',
+      href: '/batch',
+      icon: '📊',
+      description: 'Analyze up to 10 articles simultaneously. Find patterns and unified investment thesis.',
+      color: 'from-violet-600 to-purple-600',
+      stats: 'Up to 10 articles'
+    },
+    {
       title: 'Multi-News Compare',
       href: '/compare',
       icon: '📰',
@@ -102,7 +110,7 @@ export default function DashboardV2() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-12">
           <div className="bg-gray-800/50 backdrop-blur rounded-lg p-3 sm:p-4 border border-gray-700">
-            <div className="text-2xl sm:text-3xl font-bold text-blue-400">9</div>
+            <div className="text-2xl sm:text-3xl font-bold text-blue-400">10</div>
             <div className="text-xs sm:text-sm text-gray-400">Active Features</div>
           </div>
           <div className="bg-gray-800/50 backdrop-blur rounded-lg p-3 sm:p-4 border border-gray-700">
