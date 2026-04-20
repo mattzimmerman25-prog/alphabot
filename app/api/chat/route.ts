@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { buildWikiContext } from '@/lib/wiki-query'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -173,43 +174,40 @@ async function queryWikiForQuestion(
   question: string,
   entities: string[]
 ): Promise<string> {
-  // In production, this would query the actual wiki files
-  // For now, return structured context showing the pattern
+  try {
+    // Extract concepts from question
+    const concepts: string[] = []
+    const lowerQuestion = question.toLowerCase()
 
-  const context: string[] = []
-
-  // Add entity context
-  if (entities.length > 0) {
-    context.push('## Relevant Wiki Entities')
-    for (const entity of entities.slice(0, 5)) {
-      context.push(`- [[${entity}]]: Key views and positions from wiki`)
+    if (lowerQuestion.includes('power') || lowerQuestion.includes('constraint')) {
+      concepts.push('power-constraints', 'electrician-shortage')
     }
+    if (lowerQuestion.includes('debt') || lowerQuestion.includes('financing')) {
+      concepts.push('debt-financed-AI')
+    }
+    if (lowerQuestion.includes('roi') || lowerQuestion.includes('adoption') || lowerQuestion.includes('enterprise')) {
+      concepts.push('enterprise-AI-ROI', 'AI-high-performers')
+    }
+    if (lowerQuestion.includes('scaling') || lowerQuestion.includes('law')) {
+      concepts.push('scaling-laws')
+    }
+    if (lowerQuestion.includes('bottleneck')) {
+      concepts.push('AI-bottlenecks', 'power-constraints', 'HBM-bottleneck')
+    }
+    if (lowerQuestion.includes('hbm') || lowerQuestion.includes('memory')) {
+      concepts.push('HBM-bottleneck')
+    }
+
+    // Query real wiki
+    const wikiData = await buildWikiContext(entities, concepts)
+
+    // Return formatted context (already formatted by buildWikiContext)
+    return wikiData.formattedContext || 'No wiki context found for this query.'
+  } catch (error) {
+    console.error('Wiki query error:', error)
+    // Fallback to basic context
+    return `## Wiki Query Failed\nFallback context: ${entities.length} entities detected, question about: ${question.substring(0, 100)}`
   }
-
-  // Add concept context based on question keywords
-  context.push('\n## Relevant Wiki Concepts')
-
-  if (question.toLowerCase().includes('power') || question.toLowerCase().includes('constraint')) {
-    context.push(`- [[power-constraints]]: Only 1/3 of planned data center capacity can come online due to electrical equipment shortages. Lead times: 2-3 years for transformers.`)
-  }
-
-  if (question.toLowerCase().includes('debt') || question.toLowerCase().includes('financing')) {
-    context.push(`- [[debt-financed-AI]]: Howard Marks warns "Debt is toxic when applied to ventures where outcome is purely conjecture"`)
-  }
-
-  if (question.toLowerCase().includes('roi') || question.toLowerCase().includes('adoption') || question.toLowerCase().includes('enterprise')) {
-    context.push(`- [[enterprise-AI-ROI]]: 95% of enterprises struggle to demonstrate business value from AI despite 78% adoption rate`)
-  }
-
-  if (question.toLowerCase().includes('scaling') || question.toLowerCase().includes('law')) {
-    context.push(`- [[scaling-laws]]: Debate between those who believe scaling continues (Jensen, Dario) vs skeptics (Gary Marcus, Daron Acemoglu)`)
-  }
-
-  if (question.toLowerCase().includes('bottleneck')) {
-    context.push(`- [[AI-bottlenecks]]: Evolution from chips (2023) → HBM (2024) → power (2025-2026)`)
-  }
-
-  return context.join('\n')
 }
 
 function buildChatPrompt(question: string, wikiContext: string): string {
