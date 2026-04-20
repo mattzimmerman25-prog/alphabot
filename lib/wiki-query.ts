@@ -3,6 +3,8 @@
  * Loads and searches the pre-built wiki index
  */
 
+import { cache } from './cache'
+
 interface WikiPage {
   path: string
   type: 'entity' | 'concept' | 'source' | 'synthesis'
@@ -56,44 +58,84 @@ export async function loadWikiIndex(): Promise<WikiIndex> {
 }
 
 /**
- * Search wiki by entity name
+ * Search wiki by entity name (with caching)
  */
 export async function searchByEntity(entityName: string): Promise<WikiPage[]> {
+  const cacheKey = `entity:${entityName}`
+  const cached = cache.get<WikiPage[]>(cacheKey)
+
+  if (cached) return cached
+
   const index = await loadWikiIndex()
   const pagePaths = index.entities[entityName] || []
-  return index.pages.filter(p => pagePaths.includes(p.path))
+  const result = index.pages.filter(p => pagePaths.includes(p.path))
+
+  // Cache for 15 minutes
+  cache.set(cacheKey, result, 15 * 60 * 1000)
+
+  return result
 }
 
 /**
- * Search wiki by concept
+ * Search wiki by concept (with caching)
  */
 export async function searchByConcept(conceptName: string): Promise<WikiPage[]> {
+  const cacheKey = `concept:${conceptName}`
+  const cached = cache.get<WikiPage[]>(cacheKey)
+
+  if (cached) return cached
+
   const index = await loadWikiIndex()
   const pagePaths = index.concepts[conceptName] || []
-  return index.pages.filter(p => pagePaths.includes(p.path))
+  const result = index.pages.filter(p => pagePaths.includes(p.path))
+
+  // Cache for 15 minutes
+  cache.set(cacheKey, result, 15 * 60 * 1000)
+
+  return result
 }
 
 /**
- * Get a specific wiki page by name
+ * Get a specific wiki page by name (with caching)
  */
 export async function getPageByName(name: string): Promise<WikiPage | null> {
+  const cacheKey = `page:${name}`
+  const cached = cache.get<WikiPage | null>(cacheKey)
+
+  if (cached !== null) return cached
+
   const index = await loadWikiIndex()
   const normalized = name.toLowerCase().replace(/\s+/g, ' ').trim()
-  return index.pages.find(p =>
+  const result = index.pages.find(p =>
     p.name.toLowerCase().replace(/\s+/g, ' ').trim() === normalized
   ) || null
+
+  // Cache for 15 minutes
+  cache.set(cacheKey, result, 15 * 60 * 1000)
+
+  return result
 }
 
 /**
- * Search wiki content (simple text search)
+ * Search wiki content (simple text search, with caching)
  */
 export async function searchContent(query: string): Promise<WikiPage[]> {
+  const cacheKey = `search:${query.toLowerCase()}`
+  const cached = cache.get<WikiPage[]>(cacheKey)
+
+  if (cached) return cached
+
   const index = await loadWikiIndex()
   const lowerQuery = query.toLowerCase()
-  return index.pages.filter(p =>
+  const result = index.pages.filter(p =>
     p.name.toLowerCase().includes(lowerQuery) ||
     p.content.toLowerCase().includes(lowerQuery)
   ).slice(0, 20) // Limit results
+
+  // Cache search results for 10 minutes
+  cache.set(cacheKey, result, 10 * 60 * 1000)
+
+  return result
 }
 
 /**
