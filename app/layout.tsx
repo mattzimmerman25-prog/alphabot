@@ -16,6 +16,7 @@ export default function RootLayout({
 
   const navLinks = [
     { href: '/', label: 'Dashboard' },
+    { href: '/news', label: 'News' },
     { href: '/synthesize', label: 'Synthesize' },
     { href: '/compare', label: 'Compare' },
     { href: '/scenario', label: 'Scenario' },

@@ -18,6 +18,14 @@ export default function DashboardV2() {
 
   const features = [
     {
+      title: 'Live News Feed',
+      href: '/news',
+      icon: '📡',
+      description: 'Real-time news aggregation from top sources. Auto-ranked by relevance to wiki frameworks.',
+      color: 'from-cyan-600 to-blue-600',
+      stats: 'Live updates'
+    },
+    {
       title: 'Real-Time Synthesis',
       href: '/synthesize',
       icon: '⚡',
@@ -94,7 +102,7 @@ export default function DashboardV2() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-12">
           <div className="bg-gray-800/50 backdrop-blur rounded-lg p-3 sm:p-4 border border-gray-700">
-            <div className="text-2xl sm:text-3xl font-bold text-blue-400">8</div>
+            <div className="text-2xl sm:text-3xl font-bold text-blue-400">9</div>
             <div className="text-xs sm:text-sm text-gray-400">Active Features</div>
           </div>
           <div className="bg-gray-800/50 backdrop-blur rounded-lg p-3 sm:p-4 border border-gray-700">
