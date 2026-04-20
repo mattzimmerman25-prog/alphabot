@@ -9,6 +9,10 @@
 # next.js
 /.next/
 /out/
+/public/wiki-index.json
+
+# python
+__pycache__/
 
 # production
 /build
