@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { buildWikiContext, loadWikiIndex } from '@/lib/wiki-query'
+import { detectContradictions, calculateContradictionScore } from '@/lib/contradiction-detector'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -47,11 +48,15 @@ export async function POST(req: NextRequest) {
           const wikiContext = await queryWikiContext(entities, newsContent)
           sendSSE({ type: 'wiki_context', data: wikiContext })
 
-          // Step 3: Detect contradictions
-          sendSSE({ type: 'status', message: 'Detecting contradictions...' })
+          // Step 3: Detect contradictions using enhanced detector
+          sendSSE({ type: 'status', message: 'Detecting contradictions with elite frameworks...' })
 
-          const contradictions = detectContradictions(newsContent, wikiContext)
-          sendSSE({ type: 'contradictions', data: contradictions })
+          const contradictionCategories = await detectContradictions(newsContent, newsTitle)
+          const allContradictions = contradictionCategories.flatMap(c => c.contradictions)
+          const contradictionScore = calculateContradictionScore(contradictionCategories)
+
+          sendSSE({ type: 'contradictions', data: allContradictions })
+          sendSSE({ type: 'contradiction_score', data: contradictionScore })
 
           // Step 4: Stream Claude synthesis
           sendSSE({ type: 'status', message: 'Synthesizing investment thesis...' })
@@ -60,7 +65,8 @@ export async function POST(req: NextRequest) {
             newsTitle,
             newsContent,
             wikiContext,
-            contradictions
+            allContradictions,
+            contradictionScore
           )
 
           // Stream Claude's response
@@ -241,55 +247,12 @@ async function queryWikiContext(
   }
 }
 
-function detectContradictions(
-  newsContent: string,
-  wikiContext: WikiContext
-): Array<{ framework: string; author: string; contradiction: string; confidence: number }> {
-  const contradictions = []
-
-  // Pattern matching for common contradictions
-
-  // CapEx announcements vs power constraints
-  if (newsContent.toLowerCase().includes('capex') ||
-      newsContent.toLowerCase().includes('data center')) {
-    contradictions.push({
-      framework: 'power-constraints',
-      author: 'Dylan Patel',
-      contradiction: 'News announces large CapEx/data center plans, but wiki shows only 1/3 can deploy due to electrical equipment shortages (2-3 year lead times)',
-      confidence: 85
-    })
-  }
-
-  // Debt financing vs Howard Marks
-  if (newsContent.toLowerCase().includes('debt') ||
-      newsContent.toLowerCase().includes('financing')) {
-    contradictions.push({
-      framework: 'debt-financed-AI',
-      author: 'Howard Marks',
-      contradiction: 'News mentions debt financing for AI infrastructure. Howard Marks warns: "Debt is toxic when applied to ventures where outcome is purely conjecture"',
-      confidence: 82
-    })
-  }
-
-  // ROI claims vs McKinsey/BCG studies
-  if (newsContent.toLowerCase().includes('roi') ||
-      newsContent.toLowerCase().includes('adoption')) {
-    contradictions.push({
-      framework: 'enterprise-AI-ROI',
-      author: 'McKinsey/BCG',
-      contradiction: 'News implies widespread ROI success, but wiki shows 95% of enterprises struggle to demonstrate business value',
-      confidence: 78
-    })
-  }
-
-  return contradictions
-}
-
 function buildSynthesisPrompt(
   newsTitle: string,
   newsContent: string,
   wikiContext: WikiContext,
-  contradictions: any[]
+  contradictions: any[],
+  contradictionScore?: { score: number; signal: string; reasoning: string }
 ): string {
   return `# Breaking News Analysis
 
@@ -308,9 +271,18 @@ ${wikiContext.entities.map(e => `- [[${e.title}]] (${e.type})`).join('\n')}
 ${wikiContext.concepts.map(c => `- [[${c.title}]] (${c.type})`).join('\n')}
 
 ### 🚨 CONTRADICTIONS DETECTED
+
+${contradictionScore ? `**AlphaBot Contradiction Score**: ${contradictionScore.score.toFixed(0)}% confidence
+**Investment Signal**: ${contradictionScore.signal}
+**Reasoning**: ${contradictionScore.reasoning}
+
+---
+` : ''}
 ${contradictions.length > 0 ? contradictions.map(c => `
 **${c.framework}** (${c.author}) - ${c.confidence}% confidence
 ${c.contradiction}
+${c.evidence ? '\nEvidence:\n' + c.evidence.map(e => `  - ${e}`).join('\n') : ''}
+${c.investmentImplication ? '\n💰 Investment Implication: ' + c.investmentImplication : ''}
 `).join('\n') : 'No significant contradictions detected'}
 
 ---
@@ -326,7 +298,7 @@ Analyze this news through the lens of the wiki's elite frameworks.
 3. Why is there a gap?
 4. How to profit from this mispricing?
 
-Be specific with tickers, confidence scores, and risk factors.
+Use the contradiction analysis above as your starting point. Be specific with tickers, confidence scores, and risk factors.
 
 Cite every claim with [[wiki-page-name]].`
 }
