@@ -5,6 +5,7 @@ import './globals.css'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export default function RootLayout({
   children,
@@ -102,9 +103,11 @@ export default function RootLayout({
             </div>
           )}
         </nav>
-        <main>
-          {children}
-        </main>
+        <ErrorBoundary>
+          <main>
+            {children}
+          </main>
+        </ErrorBoundary>
         <footer className="mt-12 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>AlphaBot V2 • Real-Time Intelligence • Powered by Claude Sonnet 4.5</p>
         </footer>
