@@ -15,8 +15,10 @@ export default function RootLayout({
   const navLinks = [
     { href: '/', label: 'Dashboard' },
     { href: '/synthesize', label: 'Synthesize' },
+    { href: '/compare', label: 'Compare' },
     { href: '/chat', label: 'Chat' },
     { href: '/graph', label: 'Graph' },
+    { href: '/temporal', label: 'Temporal' },
   ]
 
   return (
