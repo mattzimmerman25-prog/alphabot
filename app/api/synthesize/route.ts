@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { buildWikiContext, loadWikiIndex } from '@/lib/wiki-query'
 
 export const runtime = 'edge'
 export const dynamic = 'force-dynamic'
@@ -179,28 +180,64 @@ async function queryWikiContext(
   entities: string[],
   newsContent: string
 ): Promise<WikiContext> {
-  // In production, this would query the actual wiki
-  // For now, return mock structure that shows the pattern
+  try {
+    // Extract concepts from news content
+    const concepts: string[] = []
+    const lowerContent = newsContent.toLowerCase()
 
-  return {
-    entities: entities.map(e => ({
-      title: e,
-      type: 'entity',
-      content: `Wiki content about ${e}...`
-    })).slice(0, 5),
-    concepts: [
-      {
-        title: 'power-constraints',
-        type: 'concept',
-        content: 'Only 1/3 of 12 GW planned capacity can come online due to electrical equipment shortages...'
-      },
-      {
-        title: 'debt-financed-AI',
-        type: 'concept',
-        content: 'Howard Marks: "Debt is toxic when applied to ventures where outcome is purely conjecture"...'
-      }
-    ],
-    contradictions: []
+    if (lowerContent.includes('power') || lowerContent.includes('constraint') || lowerContent.includes('electrical')) {
+      concepts.push('power-constraints', 'electrician-shortage')
+    }
+    if (lowerContent.includes('debt') || lowerContent.includes('financing') || lowerContent.includes('capex')) {
+      concepts.push('debt-financed-AI')
+    }
+    if (lowerContent.includes('roi') || lowerContent.includes('adoption') || lowerContent.includes('enterprise')) {
+      concepts.push('enterprise-AI-ROI', 'AI-high-performers')
+    }
+    if (lowerContent.includes('scaling') || lowerContent.includes('law')) {
+      concepts.push('scaling-laws')
+    }
+    if (lowerContent.includes('hbm') || lowerContent.includes('memory')) {
+      concepts.push('HBM-bottleneck')
+    }
+    if (lowerContent.includes('cowos') || lowerContent.includes('packaging')) {
+      concepts.push('CoWoS-capacity')
+    }
+
+    // Query real wiki for entity and concept context
+    const wikiData = await buildWikiContext(entities, concepts)
+
+    return {
+      entities: wikiData.entityPages.slice(0, 5).map(p => ({
+        title: p.name,
+        type: p.type,
+        content: p.content.substring(0, 500)
+      })),
+      concepts: wikiData.conceptPages.slice(0, 5).map(p => ({
+        title: p.name,
+        type: p.type,
+        content: p.content.substring(0, 500)
+      })),
+      contradictions: []
+    }
+  } catch (error) {
+    console.error('Wiki query error:', error)
+    // Fallback to basic context if wiki unavailable
+    return {
+      entities: entities.slice(0, 5).map(e => ({
+        title: e,
+        type: 'entity',
+        content: `Entity: ${e}`
+      })),
+      concepts: [
+        {
+          title: 'power-constraints',
+          type: 'concept',
+          content: 'Only 1/3 of data center capacity can come online due to electrical equipment shortages'
+        }
+      ],
+      contradictions: []
+    }
   }
 }
 
