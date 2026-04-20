@@ -4,7 +4,8 @@
   "description": "AlphaBot V2 - Real-Time AI Intelligence System",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run build:wiki && next build",
+    "build:wiki": "tsx scripts/build-wiki-index.ts || echo 'Wiki index build failed, continuing...'",
     "start": "next start",
     "lint": "next lint"
   },
@@ -26,6 +27,7 @@
     "typescript": "^5.3.3",
     "autoprefixer": "^10.4.17",
     "postcss": "^8.4.33",
-    "tailwindcss": "^3.4.1"
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.7.0"
   }
 }
